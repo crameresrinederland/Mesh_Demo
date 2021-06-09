@@ -1,0 +1,705 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Sketch in 3D | Sample | ArcGIS API for JavaScript 4.19</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.19/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #tools {
+        display: none;
+        padding: 0.5em 1em;
+      }
+
+      #updating {
+        visibility: hidden;
+        color: #999;
+        padding-top: 0.5em;
+      }
+
+      .clip {
+        border-bottom: 3px solid rgb(252, 173, 88);
+      }
+      .mask {
+        border-bottom: 3px solid rgb(157, 219, 129);
+      }
+      .replace {
+        border-bottom: 3px solid rgb(133, 148, 209);
+      }
+
+      .option {
+        margin: 5px 0;
+      }
+      
+            #sketchPanel {
+        width: 200px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      .esri-button {
+        margin: 2px;
+      }
+
+      #configurationDiv {
+        padding: 10px;
+        text-align: left;
+        width: 250px;
+      }
+
+      #snappingctrlkey {
+        display: inline;
+      }
+
+      #actionbuttons {
+        display: none;
+      }
+
+      #mainWindow {
+        padding: .5em;
+        background-color: #fff;
+      }
+      
+      #mainWindow p, #uploadForm {
+          display: block;
+          padding: .1em;
+        }
+
+    </style>
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/SceneView",
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch/SketchViewModel",
+        "esri/widgets/Expand",
+        "esri/layers/IntegratedMeshLayer",
+        "esri/layers/support/SceneModification",
+        "esri/layers/support/SceneModifications",
+        "esri/widgets/Daylight"
+      ], function (Map, SceneView, GraphicsLayer, SketchViewModel, Expand, IntegratedMeshLayer,
+      SceneModification, SceneModifications, Daylight) {
+        // the layer where the graphics are sketched
+        const graphicsLayer2 = new GraphicsLayer({ elevationInfo: { mode: "on-the-ground" } });
+
+        const map = new Map({
+          basemap: "satellite",
+          layers: [graphicsLayer2],
+          ground: "world-elevation",
+            popup: {
+              defaultPopupTemplateEnabled: true
+            }
+        });
+
+          const view = new SceneView({
+          container: "viewDiv",
+          map: map,
+          camera: {
+            position: [5.139278, 52.339105, 100],
+            tilt: 45,
+            heading: 0
+          }
+        });
+        
+        // Create SceneLayer and add to the map
+        const meshLayer = new IntegratedMeshLayer({
+          portalItem: {
+            id: "a0763af4aee24afd8ac299e31dfbd7fb"
+          },
+          popupEnabled: false
+        });
+        map.add(meshLayer);
+
+        const blue = [82, 82, 122, 0.9];
+        const white = [255, 255, 255, 0.8];
+
+        // polygon symbol used for sketching the extruded building footprints
+        const extrudedPolygon = {
+          type: "polygon-3d",
+          symbolLayers: [
+            {
+              type: "extrude",
+              size: 10, // extrude by 10 meters
+              material: {
+                color: white
+              },
+              edges: {
+                type: "solid",
+                size: "3px",
+                color: blue
+              }
+            }
+          ]
+        };
+
+        // polyline symbol used for sketching routes
+        const route = {
+          type: "line-3d",
+          symbolLayers: [
+            {
+              type: "line",
+              size: "10px",
+              material: {
+                color: white
+              }
+            },
+            {
+              type: "line",
+              size: "3px",
+              material: {
+                color: blue
+              }
+            }
+          ]
+        };
+
+        // point symbol used for sketching points of interest
+        const point = {
+          type: "point-3d",
+          symbolLayers: [
+            {
+              type: "icon",
+              size: "20px",
+              resource: { primitive: "kite" },
+              outline: {
+                color: blue,
+                size: "3px"
+              },
+              material: {
+                color: white
+              }
+            }
+          ]
+        };
+
+        // load the default value from the snapping checkbox
+        let snappingcheckboxsavedstate = document.getElementById("enabledcheckbox").checked ? true : false;
+
+        // define the SketchViewModel and pass in the symbols for each geometry type
+        // set the snappingOptions.selfEnabled to the default state
+        const sketchViewModel2 = new SketchViewModel({
+          layer: graphicsLayer2,
+          view: view,
+          pointSymbol: point,
+          polygonSymbol: extrudedPolygon,
+          polylineSymbol: route,
+          snappingOptions: {
+            enabled: snappingcheckboxsavedstate,
+            featureSources: [{ layer: graphicsLayer2 }]
+          }
+        });
+
+        // after drawing the geometry, enter the update mode to update the geometry
+        // and the deactivate the buttons
+        sketchViewModel2.on("create", function (event) {
+          if (event.state === "complete") {
+            document.getElementById("startbuttons").style.display = "inline";
+            document.getElementById("actionbuttons").style.display = "none";
+          }
+          if (event.state === "cancel") {
+            document.getElementById("startbuttons").style.display = "inline";
+            document.getElementById("actionbuttons").style.display = "none";
+          }
+        });
+
+        // graphic backup to revert a canceled update process
+        let updatebackupgraphic;
+
+        sketchViewModel2.on("update", function (event) {
+          if (event.state === "start") {
+            updatebackupgraphic = event.graphics[0].clone();
+            document.getElementById("startbuttons").style.display = "none";
+            document.getElementById("actionbuttons").style.display = "inline";
+          }
+          if (event.state === "complete") {
+            if (event.aborted) {
+              // revert to the graphic before starting the update process
+              graphicsLayer2.remove(event.graphics[0]);
+              graphicsLayer2.add(updatebackupgraphic);
+            }
+            document.getElementById("startbuttons").style.display = "inline";
+            document.getElementById("actionbuttons").style.display = "none";
+          }
+        });
+
+        const drawButtons = Array.prototype.slice.call(document.getElementsByClassName("starttool"));
+
+        // set event listeners to activate sketching graphics
+        drawButtons.forEach(function (btn) {
+          btn.addEventListener("click", function (event) {
+            // to activate sketching the create method is called passing in the geometry type
+            // from the data-type attribute of the html element
+            sketchViewModel2.create(event.target.getAttribute("data-type"));
+            document.getElementById("startbuttons").style.display = "none";
+            document.getElementById("actionbuttons").style.display = "inline";
+          });
+        });
+
+        document.getElementById("cancel").addEventListener("click", function (event) {
+          sketchViewModel2.cancel();
+        });
+        //document.getElementById("done").addEventListener("click", function (event) {
+        //  sketchViewModel2.complete();
+        //});
+
+
+        view.when(function () {
+          sketchViewModel2.watch("snappingOptions.enabled", function (newValue) {
+            document.getElementById("enabledcheckbox").checked = newValue;
+          });
+
+          document.getElementById("enabledcheckbox").checked = sketchViewModel2.snappingOptions.enabled;
+          document.getElementById("enabledcheckbox").addEventListener("change", function (event) {
+            sketchViewModel2.snappingOptions.enabled = event.target.checked ? true : false;
+          });
+
+          document.getElementById("selfsnappingcheckbox").checked = sketchViewModel2.snappingOptions.selfEnabled;
+          document.getElementById("selfsnappingcheckbox").addEventListener("change", function (event) {
+            sketchViewModel2.snappingOptions.selfEnabled = event.target.checked ? true : false;
+          });
+
+          document.getElementById("featuresnappingcheckbox").checked = sketchViewModel2.snappingOptions.featureEnabled;
+          document.getElementById("featuresnappingcheckbox").addEventListener("change", function (event) {
+            sketchViewModel2.snappingOptions.featureEnabled = event.target.checked ? true : false;
+          });
+
+          const configurationExpand = new Expand({
+            expandIconClass: "esri-icon-settings2",
+            expandTooltip: "Show snapping configuration",
+            expanded: false,
+            view: view,
+            content: document.getElementById("configurationDiv")
+          });
+
+          // observe the if the CTRL-key got pressed to give the user a visual feedback
+          // the logic itself for toggling snapping is in the SketchViewModel
+          view.on(["key-down"], (ev) => {
+            if (ev.key === "Control") {
+              document.getElementById("snappingctrlkey").style.fontWeight = "bold";
+              document.getElementById("snappingctrlkey").style.color = "royalblue";
+            }
+          });
+          view.on(["key-up"], (ev) => {
+            if (ev.key === "Control") {
+              document.getElementById("snappingctrlkey").style.fontWeight = "normal";
+              document.getElementById("snappingctrlkey").style.color = "black";
+            }
+          });
+
+          view.ui.add(configurationExpand, "top-left");
+        });
+        
+                let imLayer;
+
+        // Create graphicsLayer to store modifications and add to the map
+        const graphicsLayer = new GraphicsLayer();
+        view.map.add(graphicsLayer);
+
+        // polygon symbol used for sketching the modifications
+        const sketchSymbol = {
+          type: "polygon-3d", // autocasts as new PolygonSymbol3D()
+          symbolLayers: [
+            {
+              type: "fill", // autocasts as new FillSymbol3DLayer()
+              material: {
+                color: [255, 255, 255, 0.8]
+              },
+              outline: {
+                size: "3px",
+                color: [82, 82, 122, 1]
+              }
+            }
+          ]
+        };
+
+        // polygon symbol to symbolize the modifications
+        const modificationSymbol = {
+          type: "polygon-3d", // autocasts as new PolygonSymbol3D()
+          symbolLayers: [
+            {
+              type: "line", // autocasts as new LineSymbol3DLayer()
+              material: {
+                color: [0, 0, 0, 0]
+              },
+              size: "7px"
+            }
+          ]
+        };
+
+        /*
+         * define the SketchViewModel and pass in the symbol for sketching polygon
+         * set updateOnGraphicClick to false to be able to start the update process
+         * depending on the defined modification.
+         * clip, mask --> z-value is not used
+         * replace --> z-value is used to define the flatten height
+         */
+        const sketchViewModel = new SketchViewModel({
+          layer: graphicsLayer,
+          view: view,
+          polygonSymbol: sketchSymbol,
+          updateOnGraphicClick: false,
+          defaultCreateOptions: {
+            mode: "click"
+          }
+        });
+
+        // Add click event to the button to start sketch a polygon
+        const createModificationButton = document.getElementById(
+          "createModification"
+        );
+        createModificationButton.addEventListener("click", (event) => {
+          event.target.classList.add("esri-button--secondary");
+          sketchViewModel.create("polygon");
+        });
+
+        // listen to changes on the modificationType
+        const modificationType = document.getElementsByName("modificationType");
+        for (let i = 0, length = modificationType.length; i < length; i++) {
+          modificationType[i].onclick = modificationTypeChanged;
+        }
+
+        /*
+         * listen on sketch-create
+         * - indicate on the button that the create operation is finished
+         * - add the modificationType as attribute
+         * - update the IntegratedMesh with the modifications
+         * - start the update graphic and enable the Z only on type "replace"
+         */
+        sketchViewModel.on("create", (event) => {
+          if (event.state === "complete") {
+            createModificationButton.classList.remove("esri-button--secondary");
+            updateModificationType(
+              event.graphic,
+              getSelectedModificationType()
+            );
+            updateIntegratedMesh();
+            sketchViewModel.update(event.graphic, {
+              enableZ: getSelectedModificationType() == "replace" ? true : false
+            });
+          }
+        });
+
+        /*
+         * listen on sketch-update
+         * - set the radio-button-modification-type accordingly to the attribute
+         * - when the graphic update process is completed update the IntegratedMesh modifications
+         */
+        sketchViewModel.on("update", (event) => {
+          if (event.state === "start") {
+            document.getElementById(
+              "modification-" + event.graphics[0].attributes.modificationType
+            ).checked = true;
+          }
+          updateIntegratedMesh();
+        });
+
+        // listen to sketch-delete and update the IntegratedMesh modifications
+        sketchViewModel.on("delete", updateIntegratedMesh);
+
+        view.when(() => {
+          // get the IntegratedMesh-Layer from the WebScene
+          imLayer = map.layers.find((layer) => {
+            return layer.type === "integrated-mesh";
+          });
+
+          // listen to click events to detect if the user would like to update a graphic
+          view.on("click", (event) => {
+            view
+              .hitTest(event, {
+                include: [graphicsLayer],
+                exclude: [view.map.ground]
+              })
+              .then(processSelectedGraphic);
+          });
+
+          // add the ui
+          view.ui.add("tools", "top-right");
+          view.ui.add("sketchPanel", "top-right");
+
+          document.getElementById("tools").style.display = "block";
+
+          // display the rendering status of the IntegratedMeshLayer
+          const updatingStatusDiv = document.getElementById("updating");
+          view.whenLayerView(imLayer).then((lyrView) => {
+            lyrView.watch("updating", (value) => {
+              updatingStatusDiv.style.visibility = value ? "visible" : "hidden";
+            });
+          });
+        });
+
+        /*
+         * listen to click events to detect if the user would like to update a graphic
+         * - with hittest get the selected graphic
+         * - only if there is no create or update ongoing
+         * - start the update process dependent on the modificationType -> "replace" with enableZ
+         */
+        function processSelectedGraphic(hitTestResult) {
+          if (!sketchViewModel.activeTool) {
+            if (hitTestResult.results.length > 0) {
+              const graphicToModify = hitTestResult.results[0].graphic;
+              sketchViewModel.update(graphicToModify, {
+                enableZ:
+                  graphicToModify.attributes.modificationType == "replace"
+                    ? true
+                    : false
+              });
+            }
+          }
+        }
+
+        // Get the selected modificationType from radio-button-ui
+        function getSelectedModificationType() {
+          for (let i = 0; i < modificationType.length; i++) {
+            if (modificationType[i].checked) {
+              return modificationType[i].value;
+            }
+          }
+        }
+
+        // update the attribute and modification on radio-button click
+        function modificationTypeChanged() {
+          let item = sketchViewModel.updateGraphics.items[0];
+          if (item) {
+            try {
+              updateModificationType(item, this.value);
+              sketchViewModel.update(item, {
+                enableZ: this.value == "replace" ? true : false
+              });
+              updateIntegratedMesh();
+            } catch (error) {
+              console.log(error);
+            }
+          }
+        }
+
+        // update/add the modificationType as attribute information and change the symbolization accordingly
+        function updateModificationType(graphic, modificationType) {
+          graphic.attributes = { modificationType: modificationType };
+          let colors = {
+            clip: [252, 173, 88],
+            mask: [157, 219, 129],
+            replace: [133, 148, 209]
+          };
+          modificationSymbol.symbolLayers[0].material.color =
+            colors[modificationType];
+          graphic.symbol = modificationSymbol;
+        }
+
+        // update the IntegratedMesh with the modifications
+        function updateIntegratedMesh() {
+          // create the modification collection with the geometry and attribute from the graphicsLayer
+          let modifications = new SceneModifications(
+            graphicsLayer.graphics.toArray().map((graphic) => {
+              return new SceneModification({
+                geometry: graphic.geometry,
+                type: graphic.attributes.modificationType
+              });
+            })
+          );
+
+          // add the modifications to the IntegratedMesh
+          imLayer.modifications = modifications;
+        }
+
+        /**************************************
+         * Initialize the daylight widget
+         **************************************/
+
+         const daylightWidget = new Daylight({
+          view: view,
+          // plays the animation twice as fast than the default one
+          playSpeedMultiplier: 2,
+          // disable the timezone selection button
+          visibleElements: {
+            timezone: false
+          }
+        });
+        
+        const btnDaylight = document.getElementById("buttonDaylight");
+
+        view.ui.add(btnDaylight, "top-left");
+        //view.ui.add(daylightWidget, "top-left");
+
+        // hide and show widget for display on small devices
+        let widgetIsVisible = false;
+        btnDaylight.addEventListener("click", () => {
+          if (widgetIsVisible) {
+            view.ui.remove(daylightWidget);
+            widgetIsVisible = false;
+          } else {
+            view.ui.add(daylightWidget, "top-left");
+            widgetIsVisible = true;
+          }
+        });
+
+
+        /**************************************
+         * Add BIM 
+         **************************************/
+        const bimLayer = new GraphicsLayer();
+        view.map.add(bimLayer);
+
+
+        const modelBtn = document.getElementById("bimModel");
+        view.when(() => {
+
+        // This sample uses the SketchViewModel to add points to a
+        // GraphicsLayer. The points have 3D glTF models as symbols.
+        const sketchVM = new SketchViewModel({
+          layer: bimLayer,
+          view: view
+        });
+
+        modelBtn.addEventListener("click", () => {
+          // reference the relative path to the glTF model
+          // in the resource of an ObjectSymbol3DLayer
+          sketchVM.pointSymbol = {
+            type: "point-3d",
+            symbolLayers: [
+              {
+                type: "object",
+                resource: {
+                  href: "https://crameresrinederland.github.io/Mesh_Demo/houseobj.gltf"
+                }
+              }
+            ]
+          };
+          deactivateButtons();
+          sketchVM.create("point");
+          this.classList.add("esri-button--secondary");
+        });
+
+        sketchVM.on("create", (event) => {
+          if (event.state === "complete") {
+            sketchVM.update(event.graphic);
+            deactivateButtons();
+          }
+        });
+
+        })
+        .catch(console.error);
+
+        function deactivateButtons() {
+        const elements = Array.prototype.slice.call(document.getElementsByClassName("esri-button"));
+        elements.forEach((element) => {
+            element.classList.remove("esri-button--secondary");
+        });
+        }
+                
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    
+          <div id="tools" class="esri-widget">
+        <p>Stap 1: Teken een polygoon</p>
+        <button
+          id="createModification"
+          class="esri-button esri-button--secondary esri-button--half"
+        >
+          Create
+        </button>
+
+        <p>Stap 2: Selecteer modificatie</p>
+        <div class="option">
+          <input
+            type="radio"
+            name="modificationType"
+            id="modification-clip"
+            value="clip"
+            checked
+          />
+          <label class="clip" for="modification-clip"><b>&nbsp;Clip </b></label>
+          - verwijder het geselecteerde gebied
+        </div>
+        <div class="option">
+          <input
+            type="radio"
+            name="modificationType"
+            id="modification-mask"
+            value="mask"
+          />
+          <label class="mask" for="modification-mask"><b>&nbsp;Mask </b></label>
+          - visualiseer alleen het geselecteerde gebied
+        </div>
+        <div class="option">
+          <input
+            type="radio"
+            name="modificationType"
+            id="modification-replace"
+            value="replace"
+          />
+          <label class="replace" for="modification-replace"
+            ><b>&nbsp;Replace </b></label
+          >
+          - maak het geselecteerde gebied plat
+        </div>
+        <div id="updating">
+          Mesh wordt geupdated
+          <img
+            src="https://developers.arcgis.com/javascript/latest/sample-code/client-projection/live/loader.gif"
+            width="20"
+          />
+        </div>
+    
+    <div id="sketchPanel" class="esri-widget">
+      <div id="startbuttons">
+        <!--<button id="point" data-type="point" class="esri-button starttool">Teken a point of interest</button>-->
+        <button id="line" data-type="polyline" class="esri-button starttool">Teken een weg</button>
+        <button id="extrudedPolygon" data-type="polygon" class="esri-button starttool">Teken een gebouw</button>
+        <button id="bimModel" class="esri-button">Voeg gebouw toe</button>
+
+      </div>
+      <div id="actionbuttons">
+        <button id="cancel" class="esri-button">Cancel</button>
+        <!--<button id="done" class="esri-button">Klaar</button>-->
+      </div>
+    </div>
+    <div id="configurationDiv" class="esri-widget">
+      <table id="configurationTable">
+        <tr>
+          <td>
+            <label for="enabledcheckbox" id="enabledcheckboxlabel"
+              ><b
+                >Snapping enabled (
+                <div id="snappingctrlkey">CTRL-key</div>
+                )</b
+              ></label
+            >
+          </td>
+          <td><input type="checkbox" id="enabledcheckbox" checked /></td>
+        </tr>
+        <tr>
+          <td><label for="selfsnappingcheckbox" id="selfsnappingcheckboxlabel"> - self snapping</label></td>
+          <td><input type="checkbox" id="selfsnappingcheckbox" /></td>
+        </tr>
+        <tr>
+          <td><label for="featuresnappingcheckbox" id="featuresnappingcheckboxlabel"> - feature snapping</label></td>
+          <td><input type="checkbox" id="featuresnappingcheckbox" /></td>
+        </tr>
+      </table>
+      <button id="buttonDaylight" class="esri-widget esri-widget--button">
+        <span class="esri-icon-lightbulb"></span>
+      </button>
+  </body>
+</html>
