@@ -94,11 +94,14 @@
         "esri/layers/IntegratedMeshLayer",
         "esri/layers/support/SceneModification",
         "esri/layers/support/SceneModifications",
-        "esri/widgets/Daylight"
+        "esri/widgets/Daylight",
+        "esri/widgets/Fullscreen"
       ], function (Map, SceneView, GraphicsLayer, SketchViewModel, Expand, IntegratedMeshLayer,
-      SceneModification, SceneModifications, Daylight) {
+      SceneModification, SceneModifications, Daylight, Fullscreen) {
         // the layer where the graphics are sketched
         const graphicsLayer2 = new GraphicsLayer({ elevationInfo: { mode: "on-the-ground" } });
+
+
 
         const map = new Map({
           basemap: "satellite",
@@ -118,6 +121,11 @@
             heading: 0
           }
         });
+        fullscreen = new Fullscreen({
+          view: view
+         });
+        view.ui.add(fullscreen, "bottom-left");
+
         
         // Create SceneLayer and add to the map
         const meshLayer = new IntegratedMeshLayer({
@@ -577,7 +585,7 @@
               {
                 type: "object",
                 resource: {
-                  href: "https://crameresrinederland.github.io/Mesh_Demo/assets/houseobj.gltf"
+                  href: "https://crameresrinederland.github.io/Mesh_Demo/houseobj.gltf"
                 }
               }
             ]
