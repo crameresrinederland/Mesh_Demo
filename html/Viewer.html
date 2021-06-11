@@ -1,0 +1,83 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Sketch in 3D | Sample | ArcGIS API for JavaScript 4.19</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.19/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/SceneView",       
+        "esri/layers/IntegratedMeshLayer",
+        "esri/widgets/Fullscreen",
+        "esri/widgets/Home"
+
+        ], function (
+            Map,
+            SceneView,
+            IntegratedMeshLayer,
+            Fullscreen,
+            Home) {
+
+        const map = new Map({
+          basemap: "satellite",
+          ground: "world-elevation",
+            popup: {
+              defaultPopupTemplateEnabled: true
+            }
+        });
+
+        const view = new SceneView({
+          container: "viewDiv",
+          map: map,
+          camera: {
+            position: [5.139278, 52.339105, 100],
+            tilt: 45,
+            heading: 0
+          }
+        }); 
+        
+        var homeWidget = new Home({
+            view: view
+            });
+
+        // adds the home widget to the top left corner of the MapView
+        view.ui.add(homeWidget, "top-left");
+
+        fullscreen = new Fullscreen({
+          view: view
+         });
+
+        view.ui.add(fullscreen, "bottom-left");
+
+        // Create SceneLayer and add to the map
+        const meshLayer = new IntegratedMeshLayer({
+          portalItem: {
+            id: "a0763af4aee24afd8ac299e31dfbd7fb"
+          },
+          popupEnabled: false
+        });
+        map.add(meshLayer);    
+        
+    });   
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+
+    </body>
+</html>
