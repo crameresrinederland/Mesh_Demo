@@ -1,0 +1,392 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Sketch in 3D | Sample | ArcGIS API for JavaScript 4.19</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.19/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #paneDiv {
+        padding: 10px;
+        max-width: 200px;
+        background-color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1em;
+      }
+
+      .option {
+        margin: 5px 0;
+      }
+      
+      #sketchPanel {
+        width: 200px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      .esri-button {
+        margin: 2px;
+      }
+
+      #configurationDiv {
+        padding: 10px;
+        text-align: left;
+        width: 250px;
+      }
+
+      #snappingctrlkey {
+        display: inline;
+      }
+
+      #actionbuttons {
+        display: none;
+      }
+
+      #mainWindow {
+        padding: .5em;
+        background-color: #fff;
+      }
+      
+      #mainWindow p, #uploadForm {
+          display: block;
+          padding: .1em;
+        }
+
+        #topbar {
+        background: #fff;
+        padding: 10px;
+      }
+
+      .action-button2 {
+        font-size: 16px;
+        background-color: transparent;
+        border: 1px solid #d3d3d3;
+        color: #6e6e6e;
+        height: 32px;
+        width: 32px;
+        text-align: center;
+        box-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+      }
+
+      .action-button2:hover,
+      .action-button2:focus {
+        background: #0079c1;
+        color: #e4e4e4;
+      }
+
+      .active {
+        background: #0079c1;
+        color: #e4e4e4;
+      }
+
+    </style>
+    <script>
+      require([
+        "esri/Map",
+        "esri/views/SceneView",
+        "esri/layers/GraphicsLayer",
+        "esri/widgets/Sketch/SketchViewModel",
+        "esri/widgets/Expand",
+        "esri/layers/IntegratedMeshLayer",
+        "esri/layers/support/SceneModification",
+        "esri/layers/support/SceneModifications",
+        "esri/widgets/Fullscreen",
+        "esri/widgets/LineOfSight",
+        "esri/widgets/DirectLineMeasurement3D",
+        "esri/widgets/AreaMeasurement3D"
+      ], function (Map, SceneView, GraphicsLayer, SketchViewModel, Expand, IntegratedMeshLayer,
+      SceneModification, SceneModifications, Fullscreen, LineOfSight, DirectLineMeasurement3D, AreaMeasurement3D) {
+        // the layer where the graphics are sketched
+        const graphicsLayer2 = new GraphicsLayer({ elevationInfo: { mode: "on-the-ground" } });
+
+        let activeWidget = null;
+
+        const map = new Map({
+          basemap: "satellite",
+          layers: [graphicsLayer2],
+          ground: "world-elevation",
+            popup: {
+              defaultPopupTemplateEnabled: true
+            }
+        });
+
+          const view = new SceneView({
+          container: "viewDiv",
+          map: map,
+          camera: {
+            position: [5.139278, 52.339105, 100],
+            tilt: 45,
+            heading: 0
+          }
+        });
+        fullscreen = new Fullscreen({
+          view: view
+         });
+        view.ui.add(fullscreen, "bottom-left");
+
+        
+        // Create SceneLayer and add to the map
+        const meshLayer = new IntegratedMeshLayer({
+          portalItem: {
+            id: "a0763af4aee24afd8ac299e31dfbd7fb"
+          },
+          popupEnabled: false
+        });
+        map.add(meshLayer);
+
+        const graphicsLayer = new GraphicsLayer({
+          elevationInfo: { mode: "on-the-ground" }
+        });
+        view.map.add(graphicsLayer);
+
+        const toiletBtn = document.getElementById("toilet");
+        const stageBtn = document.getElementById("stage");
+        const tentBtn = document.getElementById("tent");
+        const hekBtn = document.getElementById("hek");
+        const barBtn = document.getElementById("barrier")
+
+        view.when(() => {
+
+          // This sample uses the SketchViewModel to add points to a
+          // GraphicsLayer. The points have 3D glTF models as symbols.
+          const sketchVM = new SketchViewModel({
+            layer: graphicsLayer,
+            view: view
+          });
+
+          const lineOfSight = new LineOfSight({
+            view: view
+          });
+
+          view.ui.add(lineOfSight, "bottom-right");
+
+          toiletBtn.addEventListener("click", () => {
+            // reference the relative path to the glTF model
+            // in the resource of an ObjectSymbol3DLayer
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  resource: {
+                    href: "https://crameresrinederland.github.io/Mesh_Demo/assets/model_6.glb"
+                  }
+                }
+              ]
+            };
+            sketchVM.create("point");
+            deactivateButtons();
+            this.classList.add("esri-button--secondary");
+          });
+
+          stageBtn.addEventListener("click", () => {
+            // reference the relative path to the glTF model
+            // in the resource of an ObjectSymbol3DLayer
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  height : 10,
+                  anchor: 'relative',
+                  anchorPosition: { x: 0, y: 0, z: -0.5 },
+                  resource: {
+                    href: "https://crameresrinederland.github.io/Mesh_Demo/assets/model_7.glb"
+                  }
+                }
+              ]
+            };
+            deactivateButtons();
+            sketchVM.create("point");
+            this.classList.add("esri-button--secondary");
+          });
+
+          tentBtn.addEventListener("click", () => {
+            // reference the relative path to the glTF model
+            // in the resource of an ObjectSymbol3DLayer
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  anchor: 'relative',
+                  anchorPosition: { x: 0, y: 0, z: -0.5 },
+                  resource: {
+                    href: "https://crameresrinederland.github.io/Mesh_Demo/assets/tent.glb"
+                  }
+                }
+              ]
+            };
+            deactivateButtons();
+            sketchVM.create("point");
+            this.classList.add("esri-button--secondary");
+          });
+
+          hekBtn.addEventListener("click", () => {
+            // reference the relative path to the glTF model
+            // in the resource of an ObjectSymbol3DLayer
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  tilt: -90,
+                  resource: {
+                    href: "https://crameresrinederland.github.io/Mesh_Demo/assets/model_3.glb"
+                  }
+                }
+              ]
+            };
+            deactivateButtons();
+            sketchVM.create("point");
+            this.classList.add("esri-button--secondary");
+          });
+
+        barBtn.addEventListener("click", () => {
+            // reference the relative path to the glTF model
+            // in the resource of an ObjectSymbol3DLayer
+            sketchVM.pointSymbol = {
+              type: "point-3d",
+              symbolLayers: [
+                {
+                  type: "object",
+                  height : 2.5,
+                  anchor: 'relative',
+                  anchorPosition: { x: 0, y: 0, z: -0.5 },
+                  resource: {
+                    href: "https://crameresrinederland.github.io/Mesh_Demo/assets/barrier.glb"
+                  }
+                }
+              ]
+            };
+            deactivateButtons();
+            sketchVM.create("point");
+            this.classList.add("esri-button--secondary");
+          });
+
+          sketchVM.on("create", (event) => {
+            if (event.state === "complete") {
+              sketchVM.update(event.graphic);
+              deactivateButtons();
+            }
+          });
+
+        })
+        .catch(console.error);
+
+        function deactivateButtons() {
+          const elements = Array.prototype.slice.call(document.getElementsByClassName("esri-button"));
+          elements.forEach((element) => {
+              element.classList.remove("esri-button--secondary");
+          });
+        }
+
+        view.ui.add("paneDiv", "top-right");
+
+        /********************************************************
+         **********MEASUREMENTS**********************************
+         *******************************************************/
+
+                 // add the toolbar for the measurement widgets
+        view.ui.add("topbar", "top-right");
+
+        document.getElementById("distanceButton").addEventListener("click", (event) => {
+          setActiveWidget(null);
+          if (!event.target.classList.contains("active")) {
+            setActiveWidget("distance");
+          } else {
+            setActiveButton(null);
+          }
+        });
+
+        document.getElementById("areaButton").addEventListener("click", (event) => {
+          setActiveWidget(null);
+          if (!event.target.classList.contains("active")) {
+            setActiveWidget("area");
+          } else {
+            setActiveButton(null);
+          }
+        });
+
+        function setActiveWidget(type) {
+          switch (type) {
+            case "distance":
+              activeWidget = new DirectLineMeasurement3D({
+                view: view
+              });
+
+              // skip the initial 'new measurement' button
+              activeWidget.viewModel.start();
+
+              view.ui.add(activeWidget, "top-right");
+              setActiveButton(document.getElementById("distanceButton"));
+              break;
+            case "area":
+              activeWidget = new AreaMeasurement3D({
+                view: view
+              });
+
+              // skip the initial 'new measurement' button
+              activeWidget.viewModel.start();
+
+              view.ui.add(activeWidget, "top-right");
+              setActiveButton(document.getElementById("areaButton"));
+              break;
+            case null:
+              if (activeWidget) {
+                view.ui.remove(activeWidget);
+                activeWidget.destroy();
+                activeWidget = null;
+              }
+              break;
+          }
+        }
+
+        function setActiveButton(selectedButton) {
+          // focus the view to activate keyboard shortcuts for sketching
+          view.focus();
+          const elements = document.getElementsByClassName("active");
+          for (let i = 0; i < elements.length; i++) {
+            elements[i].classList.remove("active");
+          }
+          if (selectedButton) {
+            selectedButton.classList.add("active");
+          }
+        }
+  
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id="paneDiv" class="esri-widget">
+      <p>Selecteer een onderdeel and plaats het in de scene: </p>
+      <button id="toilet" class="esri-button">Toilet</button><br/>
+      <button id="stage" class="esri-button">Stage</button><br/>
+      <button id="tent" class="esri-button">Tent</button><br/>
+      <button id="hek" class="esri-button">Hek</button><br/>
+      <button id="barrier" class="esri-button">Barriere</button>
+
+    </div>
+    <div id="topbar">
+      <button
+        class="action-button esri-icon-measure-line"
+        id="distanceButton"
+        type="button"
+        title="Meet afstand tussen twee punten"
+      ></button>
+      <button class="action-button esri-icon-measure-area" id="areaButton" type="button" title="Meet oppervlakte"></button>
+    </div>
+  </body>
+</html>
