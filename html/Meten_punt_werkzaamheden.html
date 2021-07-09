@@ -111,28 +111,49 @@
       }
     </style>
     <script>
-      require(["esri/WebScene", "esri/views/SceneView",
+      require(["esri/WebScene", 
+      "esri/views/SceneView",
         "esri/widgets/Fullscreen",
         "esri/widgets/DirectLineMeasurement3D",
-        "esri/widgets/AreaMeasurement3D"], function (
+        "esri/widgets/AreaMeasurement3D",
+        "esri/Map",
+        "esri/layers/IntegratedMeshLayer"
+      ], function (
         WebScene,
         SceneView, 
         Fullscreen,
         DirectLineMeasurement3D, 
-        AreaMeasurement3D
+        AreaMeasurement3D,
+        Map,
+        IntegratedMeshLayer
       ) {
         let activeWidget = null;
 
-        const webscene = new WebScene({
-          portalItem: {
-            id: "68be5596663e4bc5aaf775744a5dde67"
+        const map = new Map({
+          basemap: "satellite",
+          ground: "world-elevation",
+            popup: {
+              defaultPopupTemplateEnabled: true
+            }
+          });
+
+        const view = new SceneView({
+          map: map,
+          container: "viewDiv",
+          camera: {
+            position: [11.582516975215384, 48.13435798576062, 500],
+            tilt: 90,
+            heading: -35
           }
         });
 
-        const view = new SceneView({
-          map: webscene,
-          container: "viewDiv"
+        const meshLayer = new IntegratedMeshLayer({
+          portalItem: {
+            id: "4e1d77daac064ae2991539583f16c0b0"
+          },
+          popupEnabled: false
         });
+        map.add(meshLayer);
 
         // the button that triggers area selection mode
         const screenshotBtn = document.getElementById("screenshotBtn");
