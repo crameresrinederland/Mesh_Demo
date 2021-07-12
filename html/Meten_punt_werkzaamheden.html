@@ -229,14 +229,14 @@
                     if (text) {
                       const dataUrl = getImageWithText(screenshot, text);
                       downloadImage(
-                        webscene.portalItem.title + ".png",
+                         "werkzaamheden" + ".png",
                         dataUrl
                       );
                     }
                     // otherwise download only the webscene screenshot
                     else {
                       downloadImage(
-                        webscene.portalItem.title + ".png",
+                        "werkzaamheden" + ".png",
                         screenshot.dataUrl
                       );
                     }
