@@ -29,13 +29,13 @@ ook gebruikt voor mijn stageonderzoek naar gebruikerswensen voor 3D Integrated m
 
 ----------------------------------------------------------------------------------------------------
 
-BIM_Mesh.html			Mesh edits en BIM model plaatsen. Voor SURE en onderzoek.
-Evenementen.html		Event planner met de GlTF modellen
-Line_of_sight.html		Alleen een Line of Sight app. REDACTED
-Meten_punt_werkzaamheden.html	Survey123 + Mesh. Gebruikt voor SURE en onderzoek.
-Table_Overlap.html		Tabel voor SURE
-Table_Processing.html		Tabel voor SURE
-Viewer.html			Kale viewer voor SURE en Onderzoek.
-mgi_survey.html			Survey123 + Mesh + Meten. Gebruikt voor onderzoek.
+*BIM_Mesh.html:			Mesh edits en BIM model plaatsen. Voor SURE en onderzoek.
+*Evenementen.html:		Event planner met de GlTF modellen
+*Line_of_sight.html:		Alleen een Line of Sight app. REDACTED
+*Meten_punt_werkzaamheden.html:	Survey123 + Mesh. Gebruikt voor SURE en onderzoek.
+*Table_Overlap.html:		Tabel voor SURE
+*Table_Processing.html:		Tabel voor SURE
+*Viewer.html:			Kale viewer voor SURE en Onderzoek.
+*mgi_survey.html			Survey123 + Mesh + Meten. Gebruikt voor onderzoek.
 
 ----------------------------------------------------------------------------------------------------
