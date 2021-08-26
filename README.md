@@ -46,3 +46,14 @@ ook gebruikt voor mijn stageonderzoek naar gebruikerswensen voor 3D Integrated m
 - **mgi_survey.htm**l			Survey123 + Mesh + Meten. Gebruikt voor onderzoek.
 
 ----------------------------------------------------------------------------------------------------
+
+**Hoe aanpassen?**
+In het script staat een stuk die de mesh ophaalt. Deze ziet er zo uit. 
+
+        // Create SceneLayer and add to the map
+        const meshLayer = new IntegratedMeshLayer({
+          portalItem: {
+            id: "a0763af4aee24afd8ac299e31dfbd7fb"
+          },
+          popupEnabled: false
+        });
