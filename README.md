@@ -47,7 +47,7 @@ ook gebruikt voor mijn stageonderzoek naar gebruikerswensen voor 3D Integrated m
 
 ----------------------------------------------------------------------------------------------------
 
-**Hoe aanpassen?**
+**Hoe pas je de scripts aan voor je eigen gebied en eigen mesh?**
 
 In het script staat een stuk die de mesh ophaalt. Deze ziet er zo uit. 
 
