@@ -61,6 +61,8 @@ In het script staat een stuk die de mesh ophaalt. Deze ziet er zo uit.
         
 
 Vervang **id** met het id van de mesh die je wilt gebruiken. 
+
+In het script staat ook een stuk die de SceneView maakt. Deze ziet er zo uit. 
   
  
         const view = new SceneView({
