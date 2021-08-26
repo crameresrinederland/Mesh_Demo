@@ -62,14 +62,15 @@ In het script staat een stuk die de mesh ophaalt. Deze ziet er zo uit.
 
 Vervang **id** met het id van de mesh die je wilt gebruiken. 
   
- const view = new SceneView({
-          container: "viewDiv",
-          map: map,
-          camera: {
-            position: [5.139278, 52.339105, 100],
-            tilt: 45,
-            heading: 0
-          }
-        });
+ 
+        const view = new SceneView({
+                container: "viewDiv",
+                map: map,
+                camera: {
+                position: [5.139278, 52.339105, 100],
+                tilt: 45,
+                heading: 0
+                }
+                });
 
 Vervang de **camera position** met de latitude en longitude.
