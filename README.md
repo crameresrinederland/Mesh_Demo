@@ -48,6 +48,7 @@ ook gebruikt voor mijn stageonderzoek naar gebruikerswensen voor 3D Integrated m
 ----------------------------------------------------------------------------------------------------
 
 **Hoe aanpassen?**
+
 In het script staat een stuk die de mesh ophaalt. Deze ziet er zo uit. 
 
         // Create SceneLayer and add to the map
@@ -57,3 +58,18 @@ In het script staat een stuk die de mesh ophaalt. Deze ziet er zo uit.
           },
           popupEnabled: false
         });
+        
+
+Vervang **id** met het id van de mesh die je wilt gebruiken. 
+  
+ const view = new SceneView({
+          container: "viewDiv",
+          map: map,
+          camera: {
+            position: [5.139278, 52.339105, 100],
+            tilt: 45,
+            heading: 0
+          }
+        });
+
+Vervang de **camera position** met de latitude en longitude.
